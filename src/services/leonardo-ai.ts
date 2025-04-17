@@ -107,6 +107,20 @@ export async function generateImage(params: ImageGenerationParams, logApiCall: a
 
     // Assuming the first image ID is the one we want
     const imageId = data.generations_by_id.image_ids[0];
+    // TODO: Implement Google Cloud Storage authorization here.
+    // In a production environment, you would use the GCP credentials
+    // to authorize access to the storage bucket and generate a signed URL.
+    // For example:
+    // const { Storage } = require('@google-cloud/storage');
+    // const storage = new Storage({ projectId: GCP_PROJECT_ID });
+    // const bucket = storage.bucket(GCP_BUCKET_NAME);
+    // const file = bucket.file(`${imageId}/0.png`);
+    // const [signedUrl] = await file.getSignedUrl({
+    //   action: 'read',
+    //   expires: Date.now() + 15 * 60 * 1000, // 15 minutes
+    // });
+    // Use signedUrl as the imageUrl.
+
     const imageUrl = imageId ? `https://cdn.leonardo.ai/users/${GCP_PROJECT_ID}/generations/${imageId}/0.png` : ''; // Construct the image URL
 
     return {
