@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useState, useCallback } from "react";
+import { createContext, useState, useCallback, useContext } from "react";
 
 interface ControlPanelContextType {
   logApiCall: (description: string, url: string, request: any, response: any, status: number) => void;
@@ -37,5 +37,5 @@ export const ControlPanelProvider = ({ children }: { children: React.ReactNode }
 };
 
 export const useControlPanelContext = () => {
-  return createContext(ControlPanelContext);
+  return useContext(ControlPanelContext);
 };

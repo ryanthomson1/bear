@@ -15,6 +15,18 @@ interface SystemInstruction {
   content: string;
 }
 
+interface ControlPanelContextType {
+  logApiCall: (description: string, url: string, request: any, response: any, status: number) => void;
+}
+
+const ControlPanelContext = createContext<ControlPanelContextType>({
+  logApiCall: () => {},
+});
+
+export const useControlPanelContext = () => {
+  return useContext(ControlPanelContext);
+};
+
 export function ControlPanel() {
   const [aiModel, setAiModel] = useState("Gemini");
   const [threadsAccount, setThreadsAccount] = useState("bearwithabite");
@@ -283,6 +295,7 @@ CRITICAL REMINDERS:
   const [imageInstructions, setImageInstructions] = useState(availableInstructions.find(instruction => instruction.id === "image_instructions")?.content || "");
 
   const { toast } = useToast();
+  const { logApiCall } = useControlPanelContext();
 
   useEffect(() => {
     // Update systemInstructions when selectedInstructionId changes
