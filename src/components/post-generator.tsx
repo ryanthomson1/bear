@@ -65,7 +65,7 @@ RULES
 - No corporate tone
 - No summaries or intros
 - No “engagement bait” or preachiness
-- No formatting like a thread – each is a standalone post
+- No formatting like a thread — each is a standalone post
 - Don’t explain the joke
 - Don’t talk like an AI
 - Do not be safe
@@ -113,7 +113,7 @@ CONTENT BREAKDOWN & POST TYPES (IF NO IDEA IS PROVIDED):
    - “The Oscars are just Coachella for people who think trauma counts as craft.”
 
 3. Existential Dread & Overthinking (10%)
-   Embrace aging, mortality, loneliness, and being chronically online – with sharp, bitter humor.
+   Embrace aging, mortality, loneliness, and being chronically online — with sharp, bitter humor.
    Example:
    - “I told my therapist I’m scared of dying alone. She said, ‘at least it’s quiet.’”
 
@@ -164,7 +164,7 @@ INSTRUCTIONS
    - "Aura of authority, gravitas, or enigmatic strength"
 
 7. **Clothing & Context**:
-   - Default: "Relaxed and casual—flannel shirts, jeans, shorts, leather jacket, or henley, slightly rugged, bear costume headpiece integrated naturally"
+   - "Relaxed and casual—flannel shirts, jeans, shorts, leather jacket, or henley, slightly rugged, bear costume headpiece integrated naturally"
    - Optional variations: "Loose muscle shirt (open-collared shirt, blazer)" or "Relaxed outdoor gear (parka, scarf)" to suggest importance in different settings also "reveling revealing clothing (shirtless, muscle shirts, shorts, leather vests, tight jeans, chest harness etc.) to show some skin and sexiness.
 
 8. **Art Style & Technical Details**:
@@ -243,69 +243,58 @@ export function PostGenerator() {
 
       if (generateImages) {
         const imageResults = await Promise.all(
-          generatedPosts.posts.map(async (post, index) => {
-            try {
-              if (!selectedImageInstruction?.content) {
-                console.warn("No image instructions selected, skipping image generation.");
-                return { imageUrl: null, imagePrompt: null }; // Return null values if no image instructions
-              }
+          generatedPosts.posts.map(async (post) => {
+            // Combine image instructions and the generated thread post
+            const combinedPrompt = `${selectedImageInstruction?.content || ""} ${post.content}`;
 
-              // Combine image instructions and the generated thread post
-              const combinedPrompt = `${selectedImageInstruction.content} Inspired by: ${post.content}`;
+            const generateImagePromptsInput = {
+              threadPost: combinedPrompt,
+            };
 
+            logApiCall("Generating image prompts",
+              "/ai/flows/generate-image-prompts",
+              generateImagePromptsInput,
+              null,
+              200
+            );
 
-              const generateImagePromptsInput = {
-                threadPost: combinedPrompt,
-              };
+            const imagePromptResult = await generateImagePrompts(generateImagePromptsInput);
 
-              logApiCall("Generating image prompts",
-                "/ai/flows/generate-image-prompts",
-                generateImagePromptsInput,
-                null,
-                200
-              );
+            logApiCall("Generated image prompts",
+              "/ai/flows/generate-image-prompts",
+              generateImagePromptsInput,
+              imagePromptResult,
+              200
+            );
 
-              const imagePromptResult = await generateImagePrompts(generateImagePromptsInput);
+            const imageParams: ImageGenerationParams = {
+              prompt: imagePromptResult.imagePrompt,
+              width: 512,
+              height: 512,
+            };
 
-              logApiCall("Generated image prompts",
-                "/ai/flows/generate-image-prompts",
-                generateImagePromptsInput,
-                imagePromptResult,
-                200
-              );
+            logApiCall("Generating image",
+              "/services/leonardo-ai",
+              imageParams,
+              null,
+              200
+            );
 
-              const imageParams: ImageGenerationParams = {
-                prompt: imagePromptResult.imagePrompt,
-                width: 512,
-                height: 512,
-              };
+            const generatedImage = await generateImage(imageParams, logApiCall);
 
-              logApiCall("Generating image",
-                "/services/leonardo-ai",
-                imageParams,
-                null,
-                200
-              );
+             logApiCall("Generated image",
+              "/services/leonardo-ai",
+              imageParams,
+              generatedImage,
+              200
+            );
 
-              const generatedImage = await generateImage(imageParams, logApiCall);
-
-              logApiCall("Generated image",
-                "/services/leonardo-ai",
-                imageParams,
-                generatedImage,
-                200
-              );
-
-              return { imageUrl: generatedImage?.imageUrl || null, imagePrompt: imageParams.prompt };
-            } catch (error: any) {
-              console.warn(`Failed to generate image for post ${index + 1}:`, error.message);
-              return { imageUrl: null, imagePrompt: null }; // Return null values if image generation fails
-            }
+            return { imageUrl: generatedImage.imageUrl, imagePrompt: imageParams.prompt };
           })
         );
 
-        setImageUrls(imageResults.map(result => result?.imageUrl || null));
-        setImagePrompts(imageResults.map(result => result?.imagePrompt || null));
+        setImageUrls(imageResults.map(result => result.imageUrl));
+        setImagePrompts(imageResults.map(result => result.imagePrompt));
       }
     } catch (error: any) {
       console.error("Error generating posts:", error);
@@ -411,7 +400,7 @@ export function PostGenerator() {
                 {generateImages && imageUrls[index] && (
                   <>
                     <img
-                      src={imageUrls[index] || "https://picsum.photos/512/512"}
+                      src={imageUrls[index]}
                       alt={`Generated Image ${index + 1}`}
                       className="mt-2 rounded-md"
                     />
@@ -446,4 +435,3 @@ export function PostGenerator() {
     </div>
   );
 }
-
