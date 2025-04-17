@@ -84,7 +84,7 @@ export async function generateImage(params: ImageGenerationParams): Promise<Gene
 
     // Assuming the first image ID is the one we want
     const imageId = data.generations_by_id.image_ids[0];
-    const imageUrl = `https://cdn.leonardo.ai/users/${GCP_PROJECT_ID}/generations/${imageId}/0.png`; // Construct the image URL
+    const imageUrl = imageId ? `https://cdn.leonardo.ai/users/${GCP_PROJECT_ID}/generations/${imageId}/0.png` : ''; // Construct the image URL
 
     return {
       imageUrl: imageUrl,
@@ -94,3 +94,4 @@ export async function generateImage(params: ImageGenerationParams): Promise<Gene
     throw new Error(`Failed to generate image: ${error.message}`);
   }
 }
+
