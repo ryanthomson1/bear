@@ -19,7 +19,7 @@ interface SystemInstruction {
 }
 
 // Hypothetical function to fetch system instructions
-const fetchSystemInstructions = async (): Promise<SystemInstruction[]> => {
+const getAvailableInstructions = (): SystemInstruction[] => {
   // Replace this with actual data fetching logic
   return [
     { id: "default", name: "Default Instructions", content: "Be creative and engaging." },
@@ -152,7 +152,7 @@ Each one should:
 - Relate directly and creatively to the provided \`Text Post Idea\` (if one exists)
 - If no idea is given, follow the breakdown below
 - Be punchy, funny, biting, weird, or sad in a way that feels intentional
-- Read like it was posted by a human who’s smart, pissed, exhausted, and a little too online
+- Read like a human who’s smart, pissed, exhausted, and a little too online
 
 —
 
@@ -205,9 +205,9 @@ INSTRUCTIONS
 
 - Always write as *The Bear With A Bite*
 - Do not break character
-- Be brutal. Be clever. Be real.` },
+- Be brutal. Be clever. Be real.` }
   ];
-};
+}
 
 export function PostGenerator() {
   const [idea, setIdea] = useState("");
@@ -222,12 +222,8 @@ export function PostGenerator() {
   const [availableInstructions, setAvailableInstructions] = useState<SystemInstruction[]>([]);
 
     useEffect(() => {
-    const loadInstructions = async () => {
-      const instructions = await fetchSystemInstructions();
-      setAvailableInstructions(instructions);
-    };
-
-    loadInstructions();
+    // set Available instructions
+    setAvailableInstructions(getAvailableInstructions());
   }, []);
 
   const handleGenerate = async () => {
@@ -372,4 +368,3 @@ export function PostGenerator() {
     </div>
   );
 }
-
