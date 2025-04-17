@@ -115,11 +115,11 @@ export async function generateImage(params: ImageGenerationParams, logApiCall: a
       "modelId": "b2614463-296c-462a-9586-aafdb8f00e36",
       "num_images": 1,
       "presetStyle": "DYNAMIC",
-      "prompt": params.prompt.substring(0, 1000), // Truncate prompt to 1000 characters
+      "prompt": params.prompt.substring(0, Math.min(1000, params.prompt.length)), // Truncate prompt to 1000 characters
       "width": params.width,
       "contrast": 4,
       "guidance_scale": 7,
-      "negative_prompt": "skinny, gym built, athlete, fat, obese, white facial hair, old man, real bear",
+      "negative_prompt": "skinny, gym built, athlete, fat, obese, white facial hair, old man, real bear, nsfw, nudity, suggestive",
       "num_inference_steps": 20,
       "public": false,
       "scheduler": "LEONARDO",
