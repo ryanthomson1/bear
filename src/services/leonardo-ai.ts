@@ -76,7 +76,8 @@ export async function generateImage(params: ImageGenerationParams): Promise<Gene
 
     const data = await response.json();
 
-    if (!data.generations_by_id || !Array.isArray(data.generations_by_id.image_ids) || data.generations_by_id.image_ids.length === 0) {
+    // Modified condition to handle potential undefined/null data and missing image_ids
+    if (!data?.generations_by_id?.image_ids?.length) {
       throw new Error("No image IDs returned from Leonardo AI API.");
     }
 
