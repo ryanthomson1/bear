@@ -18,8 +18,8 @@ export const ControlPanelProvider = ({ children }: { children: React.ReactNode }
       timestamp: new Date().toISOString(),
       description: description,
       url: url,
-      request: request,
-      response: response,
+      request: request ? JSON.stringify(request, null, 2) : null,
+      response: response ? JSON.stringify(response, null, 2) : null,
       status: status,
     };
 
@@ -39,3 +39,4 @@ export const ControlPanelProvider = ({ children }: { children: React.ReactNode }
 export const useControlPanelContext = () => {
   return useContext(ControlPanelContext);
 };
+
