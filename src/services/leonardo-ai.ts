@@ -37,7 +37,7 @@ const LEONARDO_API_URL = "https://cloud.leonardo.ai/api/rest/v1/generations";
  * @param params The parameters for image generation.
  * @returns A promise that resolves to a GeneratedImage object containing the URL of the generated image.
  */
-export async function generateImage(params: ImageGenerationParams): Promise<GeneratedImage> {
+export async function generateImage(params: ImageGenerationParams, logApiCall: any): Promise<GeneratedImage> {
   try {
     const payload = {
       "height": params.height,
@@ -69,12 +69,28 @@ export async function generateImage(params: ImageGenerationParams): Promise<Gene
       body: JSON.stringify(payload)
     });
 
+     const responseBody = await response.text(); // Capture the response body
+
+     logApiCall(
+        "Leonardo AI API Response",
+        LEONARDO_API_URL,
+        payload,
+        responseBody,
+        response.status
+      );
+
     if (!response.ok) {
-      console.error("Leonardo AI API Error:", response.status, response.statusText, await response.text());
+      console.error("Leonardo AI API Error:", response.status, response.statusText, responseBody);
       throw new Error(`Leonardo AI API failed with status ${response.status}: ${response.statusText}`);
     }
 
-    const data = await response.json();
+    let data;
+    try {
+        data = JSON.parse(responseBody); // Attempt to parse the JSON
+    } catch (error) {
+        console.error("Failed to parse JSON response:", responseBody, error);
+        throw new Error("Failed to parse JSON response from Leonardo AI API");
+    }
 
     // Modified condition to handle potential undefined/null data and missing image_ids
     if (!data?.generations_by_id?.image_ids?.length) {
@@ -94,4 +110,3 @@ export async function generateImage(params: ImageGenerationParams): Promise<Gene
     throw new Error(`Failed to generate image: ${error.message}`);
   }
 }
-
