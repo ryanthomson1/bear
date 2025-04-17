@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useToast } from "@/hooks/use-toast";
 
 // Define a type for system instructions
 interface SystemInstruction {
@@ -147,7 +148,7 @@ Each one should:
 - Relate directly and creatively to the provided \`Text Post Idea\` (if one exists)
 - If no idea is given, follow the breakdown below
 - Be punchy, funny, biting, weird, or sad in a way that feels intentional
-- Read like it was posted by a human who’s smart, pissed, exhausted, and a little too online
+- Read like a human who’s smart, pissed, exhausted, and a little too online
 
 —
 
@@ -205,6 +206,8 @@ INSTRUCTIONS
   const [selectedInstructionId, setSelectedInstructionId] = useState("default");
   const [systemInstructions, setSystemInstructions] = useState(availableInstructions.find(instruction => instruction.id === "default")?.content || "");
 
+  const { toast } = useToast();
+
   useEffect(() => {
     // Update systemInstructions when selectedInstructionId changes
     const selectedInstruction = availableInstructions.find(instruction => instruction.id === selectedInstructionId);
@@ -219,7 +222,10 @@ INSTRUCTIONS
         instruction.id === selectedInstructionId ? { ...instruction, content: systemInstructions } : instruction
       )
     );
-    alert("System instructions saved!");
+    toast({
+      title: "Success",
+      description: "System instructions saved!",
+    });
   };
 
   return (
