@@ -134,31 +134,50 @@ INSTRUCTIONS
 - Always write as *The Bear With A Bite*
 - Do not break character
 - Be brutal. Be clever. Be real.` },
-      { id: "image_instructions", name: "Image Instructions", content: `Generate ONE photorealistic image prompt suitable for an AI image generator like Leonardo.ai (Flux Dev style). This prompt MUST be directly inspired by and visually represent the following text post idea.
+      { id: "image_instructions", name: "Image Instructions", content: `**Objective**: Generate photo realistic images of HUMAN men resembling the AI-generated "bears" from https://www.instagram.com/thebearwithabite/, with consistent traits: approximately 40 years old, slightly overweight, but not obese with facial hair, ethnically ambiguous, exuding coolness, and *always wearing a bear costume headpiece* that **reveals the full face** while limiting recognition through dark/mirrored sunglasses or facial shadows for a sense of anonymity. These are not real bears - they are gay men in wearing bear costume head pieces! Do not generate cartoon bears!!
 
-The central character for the image MUST be: a human male, early 40s (approx. 42), ethnically ambiguous (medium skin, hints of Mediterranean/Middle Eastern/Latin, dark features, moderately hirsute), with a cool, expressive (default: sly/curious) demeanor.
 
-Mandatory Physical & Costume Traits for the character:
-*   Build: Slightly overweight / stocky / dad-bod (attractive, thick, a little chubby around the middle, *not* obese). Describe accurately – *not* skinny or athletic build.
-*   Facial Hair: *Must have* visible facial hair: default is thick, groomed dark/salt-pepper beard/mustache; variations: stubble, bushy, handlebar. *No clean-shaven or elderly white beards.*
-*   Headpiece: *Always wear* a cute, plush *bear costume headpiece* framing the head (stylized ears/fur). Crucially, the *full face* (mouth, nose, jaw, beard) must be clearly visible.
-*   Anonymity: *Always reduce eye recognition* using *one* of these (specify which in prompt): (A) Sunglasses: Tinted or mirrored (specify color/style, e.g., "cool mirrored aviators"). (B) Shadows: Strategic/dramatic lighting casting shadows over the upper face/eyes. Ensure: Lower face and facial hair remain clear and unobscured.
+#### Key Parameters:
+1. **Age & Build**:
+   - "40-year-old man, good-looking slighly chubby dad type."
+   - "Stocky build, a little chubby around the midsection, slightly overweight, not obese, dad-bod, ex-football player"
 
-Variable Elements (Incorporate based on the Text Post Idea below):
-*   Clothing: Adapt to context implied by the text. Default: Casual/rugged (flannel, jeans, leather, henley). Variations: Workwear, business attire, outdoor gear, fun/sexy/revealing for nightlife/home (shirtless, vest, tight jeans, harness, underwear). Headpiece should look naturally integrated.
-*   Setting/Mood: Be creative and detailed! Directly reflect the theme/setting/mood of the text post idea. Can be whimsical, magical, surreal, cinematic. Include pop-culture, literary, or selfie elements if relevant to the text.
+2. **Facial Hair**:
+   - "Thick, well-groomed beard or mustache, medium-length, textured, dark brown or salt-and-pepper coloring"
+   - Variations: "scruffy stubble" or "full bushy beard" or "handlebar moustache" for diversity
 
-Technical & Style Keywords (Include as needed):
-*   Quality: Cinematic, 8K Ultra HD, extremely detailed, film grade texture.
-*   Composition: Shallow depth of field, bokeh background, 50mm lens, professional photo composition.
-*   Lighting: Specify type (dramatic, soft rim, warm sunset, natural, etc.) and effect (e.g., "soft shadows") consistent with the mood.
+3. **Ethnic Ambiguity**:
+   - "Medium skin tone, blended ethnic features (hints of Mediterranean, Middle Eastern, or Latin heritage - mixed), dark eyes.
+   - Avoid overly specific racial markers to maintain ambiguity. 
+   
+4. **Bear Costume Headpiece**:
+   - "Wearing a cute and plush bear costume headpiece, realistic or stylized bear ears and fur framing the head, full face exposed and visible, no mask covering the mouth or eyes"
+   - "Headpiece sits snugly, blending into the hairline or shoulders"
 
-CRITICAL REMINDERS:
-*   Subject Focus: The character described above is the *main hero*.
-*   NEVER use "gay bear" in the prompt (will generate an *animal*). Focus on describing the *human* man's appearance.
-*   Headpiece: Frames face, *never covers* mouth/eyes/nose.
-*   Body Type: Emphasize the specific "slightly overweight/dad-bod" build accurately.
-*   Age: Maintain early 40s look.` }
+5. **Anonymity Feature**:
+   - Default: "Wearing tinted sunglasses or mirrored sunglasses that reflect light, obscuring the eyes and limiting recognition"
+   - Alternative: "Face partially shadowed, dramatic lighting casting soft shadows over the upper face, maintaining visibility but adding mystery"
+   - Ensure: "Full facial features (beard, mouth, jaw) remain clear: only eye recognition is reduced"
+
+6. **Expression & Importance**:
+   - "Confident expression, slight smirk or stern look behind sunglasses/shadows"
+   - "Aura of authority, gravitas, or enigmatic strength"
+
+7. **Clothing & Context**:
+   - Default: "Relaxed and casual—flannel shirts, jeans, shorts, leather jacket, or henley, slightly rugged, bear costume headpiece integrated naturally"
+   - Optional variations: "Loose muscle shirt (open-collared shirt, blazer)" or "Relaxed outdoor gear (parka, scarf)" to suggest importance in different settings also "reveling revealing clothing (shirtless, muscle shirts, shorts, leather vests, tight jeans, chest harness etc.) to show some skin and sexiness.
+
+8. **Art Style & Technical Details**:
+   - "Hyper photo-realistic rendering, photograph, natural lighting, shallow depth of field, medium shot, cinematic composition, vivid colors."
+
+#### Usage Instructions:
+- Specify sunglasses type (e.g., "pink mirrored aviators") or shadow style (e.g., "harsh side lighting") for variation.
+- The bear headpiece should always frame the face, never cover it—think mascot-style but sleek and integrated.
+
+                               
+                                ** Be sure our HERO (🐻) is featured as the main character in your image prompts.**
+ 
+  After that, be super creative! Ensure the images reflect the topic's tone, mood, and theme.  They can be whimsical, magical, surreal, colorful, cinematic, and photo-realistic. Avoid dark or gritty toneed scenes. Keep it funny. Embrace creativity with literary, pop-culture, musical, or cinematic elements. He loves taking selfies!` }
   ];
 }
 
@@ -208,7 +227,7 @@ export function PostGenerator() {
         "/ai/flows/generate-thread-posts",
         generateThreadPostsInput,
         null,
-        200 // Assuming 200 OK before the actual call
+        200
       );
 
       const generatedPosts = await generateThreadPosts(generateThreadPostsInput);
@@ -413,3 +432,4 @@ export function PostGenerator() {
     </div>
   );
 }
+
