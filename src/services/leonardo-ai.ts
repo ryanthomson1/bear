@@ -26,6 +26,11 @@ export interface GeneratedImage {
   imageUrl: string;
 }
 
+const LEONARDO_API_KEY = "ee5541c6-fd97-4423-b92a-3beae4d9c6ea";
+const GCP_PROJECT_ID = "projectbear-455103";
+const GCP_BUCKET_NAME = "bearpics";
+const LEONARDO_API_URL = "https://cloud.leonardo.ai/api/rest/v1/generations";
+
 /**
  * Asynchronously generates an image using Leonardo AI based on the provided parameters.
  *
@@ -33,9 +38,57 @@ export interface GeneratedImage {
  * @returns A promise that resolves to a GeneratedImage object containing the URL of the generated image.
  */
 export async function generateImage(params: ImageGenerationParams): Promise<GeneratedImage> {
-  // TODO: Implement this by calling the Leonardo AI API.
+  try {
+    const payload = {
+      "height": params.height,
+      "modelId": "b2614463-296c-462a-9586-aafdb8f00e36",
+      "num_images": 1,
+      "presetStyle": "DYNAMIC",
+      "prompt": params.prompt.substring(0, 1000), // Truncate prompt to 1000 characters
+      "width": params.width,
+      "contrast": 4,
+      "guidance_scale": 7,
+      "negative_prompt": "skinny, gym built, athlete, fat, obese, white facial hair, old man, real bear",
+      "num_inference_steps": 20,
+      "public": false,
+      "scheduler": "LEONARDO",
+      "userElements": [
+        {
+          "weight": 0.4,
+          "userLoraId": 54879
+        }
+      ]
+    };
 
-  return {
-    imageUrl: 'https://leonardo.ai/generated_image.png',
-  };
+    const response = await fetch(LEONARDO_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${LEONARDO_API_KEY}`
+      },
+      body: JSON.stringify(payload)
+    });
+
+    if (!response.ok) {
+      console.error("Leonardo AI API Error:", response.status, response.statusText, await response.text());
+      throw new Error(`Leonardo AI API failed with status ${response.status}: ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    if (!data.generations_by_id || !Array.isArray(data.generations_by_id.image_ids) || data.generations_by_id.image_ids.length === 0) {
+      throw new Error("No image IDs returned from Leonardo AI API.");
+    }
+
+    // Assuming the first image ID is the one we want
+    const imageId = data.generations_by_id.image_ids[0];
+    const imageUrl = `https://cdn.leonardo.ai/users/${GCP_PROJECT_ID}/generations/${imageId}/0.png`; // Construct the image URL
+
+    return {
+      imageUrl: imageUrl,
+    };
+  } catch (error: any) {
+    console.error("Error generating image with Leonardo AI:", error);
+    throw new Error(`Failed to generate image: ${error.message}`);
+  }
 }
