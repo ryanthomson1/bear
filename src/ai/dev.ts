@@ -1,1 +1,3 @@
-// Flows will be imported for their side effects in this file.
+import '@/ai/flows/suggest-thread-replies.ts';
+import '@/ai/flows/generate-thread-posts.ts';
+import '@/ai/flows/generate-image-prompts.ts';
