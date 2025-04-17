@@ -217,14 +217,26 @@ INSTRUCTIONS
   const handleSaveInstructions = () => {
     // Implement logic to save system instructions
     // For now, just update the content of the selected instruction in the local state
-    setAvailableInstructions(prevInstructions =>
-      prevInstructions.map(instruction =>
+    setAvailableInstructions(prevInstructions => {
+      const updatedInstructions = prevInstructions.map(instruction =>
         instruction.id === selectedInstructionId ? { ...instruction, content: systemInstructions } : instruction
-      )
-    );
-    toast({
-      title: "Success",
-      description: "System instructions saved!",
+      );
+
+      // Check if the selected instruction was actually found and updated
+      if (!updatedInstructions.find(instruction => instruction.id === selectedInstructionId)) {
+        toast({
+          title: "Error",
+          description: "Selected system instruction not found.",
+          variant: "destructive",
+        });
+        return prevInstructions; // Return the original instructions if not found
+      }
+
+      toast({
+        title: "Success",
+        description: "System instructions saved!",
+      });
+      return updatedInstructions; // Return the updated instructions
     });
   };
 
