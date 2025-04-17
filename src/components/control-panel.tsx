@@ -18,7 +18,9 @@ interface SystemInstruction {
 export function ControlPanel() {
   const [aiModel, setAiModel] = useState("Gemini");
   const [threadsAccount, setThreadsAccount] = useState("bearwithabite");
-  const [availableInstructions, setAvailableInstructions] = useState<SystemInstruction[]>([
+
+  // Define initial system instructions
+  const initialSystemInstructions = [
     { id: "default", name: "Default Instructions", content: "Be creative and engaging." },
     { id: "ai_expert", name: "AI Expert", content: "Write as an AI expert." },
     { id: "ryan_voice", name: "RyanVoice", content: `You are writing in the voice of *Ryan Thomson*, a queer Canadian-American writer and cultural observer. Your tone is reflective, sharp, slightly weathered, and honest. You speak from a place of experience and intelligence, but you don’t posture. You care deeply about the world, even if you no longer expect it to care back.
@@ -244,10 +246,41 @@ INSTRUCTIONS
 
 - Always write as *The Bear With A Bite*
 - Do not break character
-- Be brutal. Be clever. Be real.` }
-  ]);
+- Be brutal. Be clever. Be real.` },
+    { id: "image_instructions", name: "Image Instructions", content: `Generate ONE photorealistic image prompt suitable for an AI image generator like Leonardo.ai (Flux Dev style). This prompt MUST be directly inspired by and visually represent the following text post idea.
+
+The central character for the image MUST be: a human male, early 40s (approx. 42), ethnically ambiguous (medium skin, hints of Mediterranean/Middle Eastern/Latin, dark features, moderately hirsute), with a cool, expressive (default: sly/curious) demeanor.
+
+Mandatory Physical & Costume Traits for the character:
+*   Build: Slightly overweight / stocky / dad-bod (attractive, thick, a little chubby around the middle, *not* obese). Describe accurately – *not* skinny or athletic build.
+*   Facial Hair: *Must have* visible facial hair: default is thick, groomed dark/salt-pepper beard/mustache; variations: stubble, bushy, handlebar. *No clean-shaven or elderly white beards.*
+*   Headpiece: *Always wear* a cute, plush *bear costume headpiece* framing the head (stylized ears/fur). Crucially, the *full face* (mouth, nose, jaw, beard) must be clearly visible.
+*   Anonymity: *Always reduce eye recognition* using *one* of these (specify which in prompt): (A) Sunglasses: Tinted or mirrored (specify color/style, e.g., "cool mirrored aviators"). (B) Shadows: Strategic/dramatic lighting casting shadows over the upper face/eyes. Ensure: Lower face and facial hair remain clear and unobscured.
+
+Variable Elements (Incorporate based on the Text Post Idea below):
+*   Clothing: Adapt to context implied by the text. Default: Casual/rugged (flannel, jeans, leather, henley). Variations: Workwear, business attire, outdoor gear, fun/sexy/revealing for nightlife/home (shirtless, vest, tight jeans, harness, underwear). Headpiece should look naturally integrated.
+*   Setting/Mood: Be creative and detailed! Directly reflect the theme/setting/mood of the text post idea. Can be whimsical, magical, surreal, cinematic. Include pop-culture, literary, or selfie elements if relevant to the text.
+
+Technical & Style Keywords (Include as needed):
+*   Quality: Cinematic, 8K Ultra HD, extremely detailed, film grade texture.
+*   Composition: Shallow depth of field, bokeh background, 50mm lens, professional photo composition.
+*   Lighting: Specify type (dramatic, soft rim, warm sunset, natural, etc.) and effect (e.g., "soft shadows") consistent with the mood.
+
+CRITICAL REMINDERS:
+*   Subject Focus: The character described above is the *main hero*.
+*   NEVER use "gay bear" in the prompt (will generate an *animal*). Focus on describing the *human* man's appearance.
+*   Headpiece: Frames face, *never covers* mouth/eyes/nose.
+*   Body Type: Emphasize the specific "slightly overweight/dad-bod" build accurately.
+*   Age: Maintain early 40s look.` }
+  ];
+
+  const [availableInstructions, setAvailableInstructions] = useState<SystemInstruction[]>(initialSystemInstructions);
   const [selectedInstructionId, setSelectedInstructionId] = useState("default");
   const [systemInstructions, setSystemInstructions] = useState(availableInstructions.find(instruction => instruction.id === "default")?.content || "");
+
+  // Image Instructions
+  const [selectedImageInstructionId, setSelectedImageInstructionId] = useState("image_instructions");
+  const [imageInstructions, setImageInstructions] = useState(availableInstructions.find(instruction => instruction.id === "image_instructions")?.content || "");
 
   const { toast } = useToast();
 
@@ -255,31 +288,34 @@ INSTRUCTIONS
     // Update systemInstructions when selectedInstructionId changes
     const selectedInstruction = availableInstructions.find(instruction => instruction.id === selectedInstructionId);
     setSystemInstructions(selectedInstruction?.content || "");
-  }, [selectedInstructionId, availableInstructions]);
 
-  const handleSaveInstructions = () => {
-    // Implement logic to save system instructions
-    // For now, just update the content of the selected instruction in the local state
+     const selectedImageInstruction = availableInstructions.find(instruction => instruction.id === selectedImageInstructionId);
+     setImageInstructions(selectedImageInstruction?.content || "");
+  }, [selectedInstructionId, selectedImageInstructionId, availableInstructions]);
+
+  const handleSaveInstructions = (instructionType: 'text' | 'image') => {
+    const instructionContent = instructionType === 'text' ? systemInstructions : imageInstructions;
+    const selectedId = instructionType === 'text' ? selectedInstructionId : selectedImageInstructionId;
+
     setAvailableInstructions(prevInstructions => {
       const updatedInstructions = prevInstructions.map(instruction =>
-        instruction.id === selectedInstructionId ? { ...instruction, content: systemInstructions } : instruction
+        instruction.id === selectedId ? { ...instruction, content: instructionContent } : instruction
       );
 
-      // Check if the selected instruction was actually found and updated
-      if (!updatedInstructions.find(instruction => instruction.id === selectedInstructionId)) {
+      if (!updatedInstructions.find(instruction => instruction.id === selectedId)) {
         toast({
           title: "Error",
-          description: "Selected system instruction not found.",
+          description: `Selected ${instructionType} system instruction not found.`,
           variant: "destructive",
         });
-        return prevInstructions; // Return the original instructions if not found
+        return prevInstructions;
       }
 
       toast({
         title: "Success",
-        description: "System instructions saved!",
+        description: `${instructionType} system instructions saved!`,
       });
-      return updatedInstructions; // Return the updated instructions
+      return updatedInstructions;
     });
   };
 
@@ -340,7 +376,7 @@ INSTRUCTIONS
 
       <Card className="mb-4">
         <CardHeader>
-          <CardTitle>System Instructions Management</CardTitle>
+          <CardTitle>System Instructions Management (Text)</CardTitle>
         </CardHeader>
         <CardContent>
           <Select value={selectedInstructionId} onValueChange={setSelectedInstructionId}>
@@ -349,9 +385,11 @@ INSTRUCTIONS
             </SelectTrigger>
             <SelectContent>
               {availableInstructions.map((instruction) => (
-                <SelectItem key={instruction.id} value={instruction.id}>
-                  {instruction.name}
-                </SelectItem>
+                instruction.id !== "image_instructions" && (
+                  <SelectItem key={instruction.id} value={instruction.id}>
+                    {instruction.name}
+                  </SelectItem>
+                )
               ))}
             </SelectContent>
           </Select>
@@ -361,9 +399,39 @@ INSTRUCTIONS
             className="mb-2 mt-2"
             placeholder="Enter system instructions"
           />
-          <Button onClick={handleSaveInstructions}>Save Instructions</Button>
+          <Button onClick={() => handleSaveInstructions('text')}>Save Instructions</Button>
         </CardContent>
       </Card>
+
+      <Card className="mb-4">
+        <CardHeader>
+          <CardTitle>System Instructions Management (Image)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Select value={selectedImageInstructionId} onValueChange={setSelectedImageInstructionId}>
+            <SelectTrigger className="w-[300px]">
+              <SelectValue placeholder="Select Image Instructions" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableInstructions.map((instruction) => (
+                instruction.id === "image_instructions" && (
+                  <SelectItem key={instruction.id} value={instruction.id}>
+                    {instruction.name}
+                  </SelectItem>
+                )
+              ))}
+            </SelectContent>
+          </Select>
+          <Textarea
+            value={imageInstructions}
+            onChange={(e) => setImageInstructions(e.target.value)}
+            className="mb-2 mt-2"
+            placeholder="Enter image generation instructions"
+          />
+          <Button onClick={() => handleSaveInstructions('image')}>Save Image Instructions</Button>
+        </CardContent>
+      </Card>
+
 
        <Card className="mb-4">
         <CardHeader>
@@ -385,11 +453,3 @@ INSTRUCTIONS
     </div>
   );
 }
-
-// Create a context for sharing the logApiCall function
-const ControlPanelContext = createContext({
-  logApiCall: (description: string, url: string, request: any, response: any, status: number) => {},
-});
-
-// Export the useContext hook for accessing the context
-export const useControlPanelContext = () => useContext(ControlPanelContext);

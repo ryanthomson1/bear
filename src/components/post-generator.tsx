@@ -10,7 +10,7 @@ import { generateImagePrompts } from "@/ai/flows/generate-image-prompts";
 import { generateImage, ImageGenerationParams } from "@/services/leonardo-ai";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { useControlPanelContext } from "@/components/control-panel";
+import { useControlPanelContext } from "@/components/control-panel-provider";
 
 // Define a type for system instructions
 interface SystemInstruction {
@@ -25,7 +25,7 @@ const getAvailableInstructions = (): SystemInstruction[] => {
   return [
     { id: "default", name: "Default Instructions", content: "Be creative and engaging." },
     { id: "ai_expert", name: "AI Expert", content: "Write as an AI expert." },
-    { id: "ryan_voice", name: "AI Expert", content: "Write as an AI expert." },
+    { id: "ryan_voice", name: "Ryan Expert", content: "Write as a Ryan expert." },
     { id: "bear_with_bite", name: "The Bear With A Bite", content: `🐻 SYSTEM INSTRUCTIONS — The Bear With A Bite (Threads Post Generator)
 
 You are writing as *The Bear With A Bite*, a politically queer, deeply online voice of rage, wit, and existential dread. You post like someone who's been doomscrolling for 14 hours and just got more articulate about it. You are sharp, funny, emotionally raw, and occasionally unhinged—but you always know what you're doing.
@@ -133,13 +133,39 @@ INSTRUCTIONS
 
 - Always write as *The Bear With A Bite*
 - Do not break character
-- Be brutal. Be clever. Be real.` }
+- Be brutal. Be clever. Be real.` },
+      { id: "image_instructions", name: "Image Instructions", content: `Generate ONE photorealistic image prompt suitable for an AI image generator like Leonardo.ai (Flux Dev style). This prompt MUST be directly inspired by and visually represent the following text post idea.
+
+The central character for the image MUST be: a human male, early 40s (approx. 42), ethnically ambiguous (medium skin, hints of Mediterranean/Middle Eastern/Latin, dark features, moderately hirsute), with a cool, expressive (default: sly/curious) demeanor.
+
+Mandatory Physical & Costume Traits for the character:
+*   Build: Slightly overweight / stocky / dad-bod (attractive, thick, a little chubby around the middle, *not* obese). Describe accurately – *not* skinny or athletic build.
+*   Facial Hair: *Must have* visible facial hair: default is thick, groomed dark/salt-pepper beard/mustache; variations: stubble, bushy, handlebar. *No clean-shaven or elderly white beards.*
+*   Headpiece: *Always wear* a cute, plush *bear costume headpiece* framing the head (stylized ears/fur). Crucially, the *full face* (mouth, nose, jaw, beard) must be clearly visible.
+*   Anonymity: *Always reduce eye recognition* using *one* of these (specify which in prompt): (A) Sunglasses: Tinted or mirrored (specify color/style, e.g., "cool mirrored aviators"). (B) Shadows: Strategic/dramatic lighting casting shadows over the upper face/eyes. Ensure: Lower face and facial hair remain clear and unobscured.
+
+Variable Elements (Incorporate based on the Text Post Idea below):
+*   Clothing: Adapt to context implied by the text. Default: Casual/rugged (flannel, jeans, leather, henley). Variations: Workwear, business attire, outdoor gear, fun/sexy/revealing for nightlife/home (shirtless, vest, tight jeans, harness, underwear). Headpiece should look naturally integrated.
+*   Setting/Mood: Be creative and detailed! Directly reflect the theme/setting/mood of the text post idea. Can be whimsical, magical, surreal, cinematic. Include pop-culture, literary, or selfie elements if relevant to the text.
+
+Technical & Style Keywords (Include as needed):
+*   Quality: Cinematic, 8K Ultra HD, extremely detailed, film grade texture.
+*   Composition: Shallow depth of field, bokeh background, 50mm lens, professional photo composition.
+*   Lighting: Specify type (dramatic, soft rim, warm sunset, natural, etc.) and effect (e.g., "soft shadows") consistent with the mood.
+
+CRITICAL REMINDERS:
+*   Subject Focus: The character described above is the *main hero*.
+*   NEVER use "gay bear" in the prompt (will generate an *animal*). Focus on describing the *human* man's appearance.
+*   Headpiece: Frames face, *never covers* mouth/eyes/nose.
+*   Body Type: Emphasize the specific "slightly overweight/dad-bod" build accurately.
+*   Age: Maintain early 40s look.` }
   ];
 }
 
 export function PostGenerator() {
   const [idea, setIdea] = useState("");
   const [selectedInstructionId, setSelectedInstructionId] = useState("default");
+  const [selectedImageInstructionId, setSelectedImageInstructionId] = useState("image_instructions");
   const [generateImages, setGenerateImages] = useState(false);
   const [posts, setPosts] = useState<string[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
@@ -150,7 +176,7 @@ export function PostGenerator() {
   const [availableInstructions, setAvailableInstructions] = useState<SystemInstruction[]>([]);
 
   const { toast } = useToast();
-  const logApiCall = useControlPanelContext();
+  const { logApiCall } = useControlPanelContext();
 
   useEffect(() => {
     // set Available instructions
@@ -169,13 +195,16 @@ export function PostGenerator() {
         (instruction) => instruction.id === selectedInstructionId
       );
 
+      const selectedImageInstruction = availableInstructions.find(
+        (instruction) => instruction.id === selectedImageInstructionId
+      );
+
       const generateThreadPostsInput = {
         input: idea,
         systemInstructions: selectedInstruction?.content || "",
       };
 
-      logApiCall.logApiCall(
-        "Generating thread posts",
+      logApiCall("Generating thread posts",
         "/ai/flows/generate-thread-posts",
         generateThreadPostsInput,
         null,
@@ -184,8 +213,7 @@ export function PostGenerator() {
 
       const generatedPosts = await generateThreadPosts(generateThreadPostsInput);
 
-      logApiCall.logApiCall(
-        "Generated thread posts",
+      logApiCall("Generated thread posts",
         "/ai/flows/generate-thread-posts",
         generateThreadPostsInput,
         generatedPosts,
@@ -201,8 +229,7 @@ export function PostGenerator() {
               threadPost: post.content,
             };
 
-            logApiCall.logApiCall(
-              "Generating image prompts",
+            logApiCall("Generating image prompts",
               "/ai/flows/generate-image-prompts",
               generateImagePromptsInput,
               null,
@@ -211,8 +238,7 @@ export function PostGenerator() {
 
             const imagePromptResult = await generateImagePrompts(generateImagePromptsInput);
 
-            logApiCall.logApiCall(
-              "Generated image prompts",
+            logApiCall("Generated image prompts",
               "/ai/flows/generate-image-prompts",
               generateImagePromptsInput,
               imagePromptResult,
@@ -220,30 +246,28 @@ export function PostGenerator() {
             );
 
             const imageParams: ImageGenerationParams = {
-              prompt: imagePromptResult.imagePrompt,
+              prompt: `${imagePromptResult.imagePrompt} ${selectedImageInstruction?.content || ""}`,
               width: 512,
               height: 512,
             };
 
-            logApiCall.logApiCall(
-              "Generating image",
+            logApiCall("Generating image",
               "/services/leonardo-ai",
               imageParams,
               null,
               200
             );
 
-            const generatedImage = await generateImage(imageParams);
+            const generatedImage = await generateImage(imageParams, logApiCall);
 
-             logApiCall.logApiCall(
-              "Generated image",
+             logApiCall("Generated image",
               "/services/leonardo-ai",
               imageParams,
               generatedImage,
               200
             );
 
-            return { imageUrl: generatedImage.imageUrl, imagePrompt: imagePromptResult.imagePrompt };
+            return { imageUrl: generatedImage.imageUrl, imagePrompt: imageParams.prompt };
           })
         );
 
@@ -295,9 +319,31 @@ export function PostGenerator() {
           </SelectTrigger>
           <SelectContent>
             {availableInstructions.map((instruction) => (
-              <SelectItem key={instruction.id} value={instruction.id}>
-                {instruction.name}
-              </SelectItem>
+              instruction.id !== "image_instructions" && (
+                <SelectItem key={instruction.id} value={instruction.id}>
+                  {instruction.name}
+                </SelectItem>
+              )
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-sm font-medium text-gray-700">
+          Image Instructions
+        </label>
+        <Select value={selectedImageInstructionId} onValueChange={setSelectedImageInstructionId}>
+          <SelectTrigger className="w-[300px]">
+            <SelectValue placeholder="Select Image Instructions" />
+          </SelectTrigger>
+          <SelectContent>
+            {availableInstructions.map((instruction) => (
+              instruction.id === "image_instructions" && (
+                <SelectItem key={instruction.id} value={instruction.id}>
+                  {instruction.name}
+                </SelectItem>
+              )
             ))}
           </SelectContent>
         </Select>
@@ -367,3 +413,4 @@ export function PostGenerator() {
     </div>
   );
 }
+
