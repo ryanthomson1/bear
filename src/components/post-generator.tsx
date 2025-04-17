@@ -10,6 +10,7 @@ import { generateThreadPosts } from "@/ai/flows/generate-thread-posts";
 import { generateImagePrompts } from "@/ai/flows/generate-image-prompts";
 import { generateImage, ImageGenerationParams } from "@/services/leonardo-ai";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { useToast } from "@/hooks/use-toast";
 
 // Define a type for system instructions
 interface SystemInstruction {
@@ -152,7 +153,7 @@ Each one should:
 - Relate directly and creatively to the provided \`Text Post Idea\` (if one exists)
 - If no idea is given, follow the breakdown below
 - Be punchy, funny, biting, weird, or sad in a way that feels intentional
-- Read like a human who’s smart, pissed, exhausted, and a little too online
+- Read like it was posted by a human who’s smart, pissed, exhausted, and a little too online
 
 —
 
@@ -216,12 +217,15 @@ export function PostGenerator() {
   const [generateImages, setGenerateImages] = useState(false);
   const [posts, setPosts] = useState<string[]>([]);
   const [imageUrls, setImageUrls] = useState<string[]>([]);
+  const [imagePrompts, setImagePrompts] = useState<string[]>([]); // Store image prompts
   const [loading, setLoading] = useState(false);
   const [selectedPostIndex, setSelectedPostIndex] = useState<number | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
   const [availableInstructions, setAvailableInstructions] = useState<SystemInstruction[]>([]);
 
-    useEffect(() => {
+  const { toast } = useToast();
+
+  useEffect(() => {
     // set Available instructions
     setAvailableInstructions(getAvailableInstructions());
   }, []);
@@ -230,12 +234,13 @@ export function PostGenerator() {
     setLoading(true);
     setPosts([]);
     setImageUrls([]);
+    setImagePrompts([]); // Clear previous image prompts
 
     try {
-        // Find the selected instruction
-        const selectedInstruction = availableInstructions.find(
-          (instruction) => instruction.id === selectedInstructionId
-        );
+      // Find the selected instruction
+      const selectedInstruction = availableInstructions.find(
+        (instruction) => instruction.id === selectedInstructionId
+      );
 
       const generatedPosts = await generateThreadPosts({
         input: idea,
@@ -245,7 +250,7 @@ export function PostGenerator() {
       setPosts(generatedPosts.posts.map((post) => post.content));
 
       if (generateImages) {
-        const generatedImageUrls = await Promise.all(
+        const imageResults = await Promise.all(
           generatedPosts.posts.map(async (post) => {
             const imagePromptResult = await generateImagePrompts({
               threadPost: post.content,
@@ -258,13 +263,20 @@ export function PostGenerator() {
             };
 
             const generatedImage = await generateImage(imageParams);
-            return generatedImage.imageUrl;
+            return { imageUrl: generatedImage.imageUrl, imagePrompt: imagePromptResult.imagePrompt };
           })
         );
-        setImageUrls(generatedImageUrls);
+
+        setImageUrls(imageResults.map(result => result.imageUrl));
+        setImagePrompts(imageResults.map(result => result.imagePrompt));
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error generating posts:", error);
+      toast({
+        title: "Error",
+        description: `Failed to generate content: ${error.message}`,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -298,17 +310,17 @@ export function PostGenerator() {
           System Instructions
         </label>
         <Select value={selectedInstructionId} onValueChange={setSelectedInstructionId}>
-            <SelectTrigger className="w-[300px]">
-              <SelectValue placeholder="Select System Instructions" />
-            </SelectTrigger>
-            <SelectContent>
-              {availableInstructions.map((instruction) => (
-                <SelectItem key={instruction.id} value={instruction.id}>
-                  {instruction.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <SelectTrigger className="w-[300px]">
+            <SelectValue placeholder="Select System Instructions" />
+          </SelectTrigger>
+          <SelectContent>
+            {availableInstructions.map((instruction) => (
+              <SelectItem key={instruction.id} value={instruction.id}>
+                {instruction.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="mb-4 flex items-center space-x-2">
@@ -338,11 +350,18 @@ export function PostGenerator() {
               <CardContent>
                 <p>{post}</p>
                 {generateImages && imageUrls[index] && (
-                  <img
-                    src={imageUrls[index]}
-                    alt={`Generated Image ${index + 1}`}
-                    className="mt-2 rounded-md"
-                  />
+                  <>
+                    <img
+                      src={imageUrls[index]}
+                      alt={`Generated Image ${index + 1}`}
+                      className="mt-2 rounded-md"
+                    />
+                    {imagePrompts[index] && (
+                      <p className="text-xs italic mt-1">
+                        Image Prompt: {imagePrompts[index]}
+                      </p>
+                    )}
+                  </>
                 )}
                 <Button
                   variant="outline"
