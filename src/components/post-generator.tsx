@@ -244,8 +244,11 @@ export function PostGenerator() {
       if (generateImages) {
         const imageResults = await Promise.all(
           generatedPosts.posts.map(async (post) => {
+            // Combine image instructions and the generated thread post
+            const combinedPrompt = `${selectedImageInstruction?.content || ""} ${post.content}`;
+
             const generateImagePromptsInput = {
-              threadPost: post.content,
+              threadPost: combinedPrompt,
             };
 
             logApiCall("Generating image prompts",
@@ -265,7 +268,7 @@ export function PostGenerator() {
             );
 
             const imageParams: ImageGenerationParams = {
-              prompt: `${imagePromptResult.imagePrompt} ${selectedImageInstruction?.content || ""}`,
+              prompt: imagePromptResult.imagePrompt,
               width: 512,
               height: 512,
             };
@@ -432,4 +435,3 @@ export function PostGenerator() {
     </div>
   );
 }
-

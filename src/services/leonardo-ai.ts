@@ -26,6 +26,77 @@ export interface GeneratedImage {
   imageUrl: string;
 }
 
+interface LeonardoAIJobResponse {
+  sdGenerationJob: {
+    generationId: string;
+  };
+}
+
+interface LeonardoAIGenerationResponse {  
+    generations_by_pk: {
+      status: string;
+      generated_images: {
+        url: string;
+      }[];
+    }
+
+
+}
+
+async function getGenerationDetails(generationId: string, logApiCall: any): Promise<string[]> {
+  const url = `${LEONARDO_API_URL}/${generationId}`;
+
+  logApiCall("Calling Leonardo AI API - Get Generation Details", url, null, null, 200);
+
+  const response = await fetch(url, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${LEONARDO_API_KEY}`
+    },
+  });
+
+  const responseBody = await response.text();
+
+  logApiCall("Leonardo AI API Response - Get Generation Details", url, null, responseBody, response.status);
+
+  if (!response.ok) {
+    console.error("Leonardo AI API Error (Get Details):", response.status, response.statusText, responseBody);
+    throw new Error(`Leonardo AI API failed with status ${response.status}: ${response.statusText}`);
+  }
+
+  let data: LeonardoAIGenerationResponse;
+  try {
+      data = JSON.parse(responseBody) as LeonardoAIGenerationResponse;
+  } catch (e) {
+      console.error("Failed to parse generation details:", e, responseBody);
+      throw new Error("Failed to parse generation details from Leonardo AI API");
+  }
+
+  const startTime = Date.now();
+  const timeout = 15000; // 15 seconds
+
+  while (data?.generations_by_pk?.status !== "COMPLETE") {
+    if (Date.now() - startTime > timeout) {
+      throw new Error("Timeout waiting for image generation to complete.");
+    }
+
+    // Wait for 1 second before polling again
+    await new Promise(resolve => setTimeout(resolve, 1000));
+
+    const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${LEONARDO_API_KEY}`
+        },
+      });
+      data = JSON.parse(await response.text()) as LeonardoAIGenerationResponse;
+  }
+
+  return data?.generations_by_pk?.generated_images?.map(image => image.url) || [];
+}
+
 const LEONARDO_API_KEY = "ee5541c6-fd97-4423-b92a-3beae4d9c6ea";
 const GCP_PROJECT_ID = "projectbear-455103";
 const GCP_BUCKET_NAME = "bearpics";
@@ -37,7 +108,7 @@ const LEONARDO_API_URL = "https://cloud.leonardo.ai/api/rest/v1/generations";
  * @param params The parameters for image generation.
  * @returns A promise that resolves to a GeneratedImage object containing the URL of the generated image.
  */
-export async function generateImage(params: ImageGenerationParams, logApiCall: any): Promise<GeneratedImage> {
+export async function generateImage(params: ImageGenerationParams, logApiCall: any): Promise<GeneratedImage | null> {
   try {
     const payload = {
       "height": params.height,
@@ -76,38 +147,31 @@ export async function generateImage(params: ImageGenerationParams, logApiCall: a
       body: JSON.stringify(payload)
     });
 
-     const responseBody = await response.text(); // Capture the response body
+    const responseBody = await response.text();
 
-     logApiCall(
-        "Leonardo AI API Response",
-        LEONARDO_API_URL,
-        payload,
-        responseBody,
-        response.status
-      );
+    logApiCall("Leonardo AI API Response", LEONARDO_API_URL, payload, responseBody, response.status);
 
     if (!response.ok) {
-      console.error("Leonardo AI API Error:", response.status, response.statusText, responseBody);
-      throw new Error(`Leonardo AI API failed with status ${response.status}: ${response.statusText}`);
+      throw new Error(`Leonardo AI API failed: ${response.status} - ${responseBody}`);
     }
 
-    let data;
-    try {
-        data = JSON.parse(responseBody); // Attempt to parse the JSON
-    } catch (error) {
-        console.error("Failed to parse JSON response:", responseBody, error);
-        throw new Error("Failed to parse JSON response from Leonardo AI API");
+    const data: LeonardoAIJobResponse = JSON.parse(responseBody);
+    const generationId = data?.sdGenerationJob?.generationId;
+
+    if (!generationId) {
+      throw new Error("No generation ID found in the response");
     }
 
-    // Modified condition to handle potential undefined/null data and missing image_ids
-    if (!data?.generations_by_id?.image_ids?.length) {
-      console.error("Leonardo AI API Response:", data); // Log the entire response
-      throw new Error("No image IDs returned from Leonardo AI API. Check the console for the full API response.");
+    const imageIds = await getGenerationDetails(generationId, logApiCall);
+
+    if (!imageIds || imageIds.length === 0) {
+      throw new Error("No image URLs received from Leonardo API");
     }
 
-    // Assuming the first image ID is the one we want
-    const imageId = data.generations_by_id.image_ids[0];
-    // TODO: Implement Google Cloud Storage authorization here.
+    // Assuming we only requested one image, we'll use the first URL.
+    const imageUrl = imageIds[0];
+
+     // TODO: Implement Google Cloud Storage authorization here.
     // In a production environment, you would use the GCP credentials
     // to authorize access to the storage bucket and generate a signed URL.
     // For example:
@@ -120,14 +184,11 @@ export async function generateImage(params: ImageGenerationParams, logApiCall: a
     //   expires: Date.now() + 15 * 60 * 1000, // 15 minutes
     // });
     // Use signedUrl as the imageUrl.
-
-    const imageUrl = imageId ? `https://cdn.leonardo.ai/users/${GCP_PROJECT_ID}/generations/${imageId}/0.png` : ''; // Construct the image URL
-
     return {
       imageUrl: imageUrl,
     };
   } catch (error: any) {
     console.error("Error generating image with Leonardo AI:", error);
     throw new Error(`Failed to generate image: ${error.message}`);
-  }
+  }  
 }
