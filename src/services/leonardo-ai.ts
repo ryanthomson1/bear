@@ -60,6 +60,13 @@ export async function generateImage(params: ImageGenerationParams, logApiCall: a
       ]
     };
 
+    logApiCall("Calling Leonardo AI API",
+        LEONARDO_API_URL,
+        payload,
+        null,
+        200
+      );
+
     const response = await fetch(LEONARDO_API_URL, {
       method: 'POST',
       headers: {
