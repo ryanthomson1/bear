@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -9,9 +9,27 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { generateThreadPosts } from "@/ai/flows/generate-thread-posts";
 import { generateImagePrompts } from "@/ai/flows/generate-image-prompts";
 import { generateImage, ImageGenerationParams } from "@/services/leonardo-ai";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+// Define a type for system instructions
+interface SystemInstruction {
+  id: string;
+  name: string;
+  content: string;
+}
+
+// Hypothetical function to fetch system instructions
+const fetchSystemInstructions = async (): Promise<SystemInstruction[]> => {
+  // Replace this with actual data fetching logic
+  return [
+    { id: "default", name: "Default Instructions", content: "Be creative and engaging." },
+    { id: "ai_expert", name: "AI Expert", content: "Write as an AI expert." },
+  ];
+};
 
 export function PostGenerator() {
   const [idea, setIdea] = useState("");
+  const [selectedInstructionId, setSelectedInstructionId] = useState("default");
   const [systemInstructions, setSystemInstructions] = useState("");
   const [generateImages, setGenerateImages] = useState(false);
   const [posts, setPosts] = useState<string[]>([]);
@@ -19,6 +37,16 @@ export function PostGenerator() {
   const [loading, setLoading] = useState(false);
   const [selectedPostIndex, setSelectedPostIndex] = useState<number | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState<number | null>(null);
+  const [availableInstructions, setAvailableInstructions] = useState<SystemInstruction[]>([]);
+
+    useEffect(() => {
+    const loadInstructions = async () => {
+      const instructions = await fetchSystemInstructions();
+      setAvailableInstructions(instructions);
+    };
+
+    loadInstructions();
+  }, []);
 
   const handleGenerate = async () => {
     setLoading(true);
@@ -26,9 +54,14 @@ export function PostGenerator() {
     setImageUrls([]);
 
     try {
+        // Find the selected instruction
+        const selectedInstruction = availableInstructions.find(
+          (instruction) => instruction.id === selectedInstructionId
+        );
+
       const generatedPosts = await generateThreadPosts({
         input: idea,
-        systemInstructions: systemInstructions,
+        systemInstructions: selectedInstruction?.content || "",
       });
 
       setPosts(generatedPosts.posts.map((post) => post.content));
@@ -81,16 +114,25 @@ export function PostGenerator() {
           className="mt-1"
         />
       </div>
+
       <div className="mb-4">
         <label className="block text-sm font-medium text-gray-700">
           System Instructions
         </label>
-        <Textarea
-          value={systemInstructions}
-          onChange={(e) => setSystemInstructions(e.target.value)}
-          className="mt-1"
-        />
+        <Select value={selectedInstructionId} onValueChange={setSelectedInstructionId}>
+            <SelectTrigger className="w-[300px]">
+              <SelectValue placeholder="Select System Instructions" />
+            </SelectTrigger>
+            <SelectContent>
+              {availableInstructions.map((instruction) => (
+                <SelectItem key={instruction.id} value={instruction.id}>
+                  {instruction.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
       </div>
+
       <div className="mb-4 flex items-center space-x-2">
         <Checkbox
           checked={generateImages}
