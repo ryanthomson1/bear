@@ -177,7 +177,12 @@ INSTRUCTIONS
                                
                                 ** Be sure our HERO (🐻) is featured as the main character in your image prompts.**
  
-  After that, be super creative! Ensure the images reflect the topic's tone, mood, and theme.  They can be whimsical, magical, surreal, colorful, cinematic, and photo-realistic. Avoid dark or gritty toneed scenes. Keep it funny. Embrace creativity with literary, pop-culture, musical, or cinematic elements. He loves taking selfies!` }
+  After that, be super creative! Ensure the images reflect the topic's tone, mood, and theme.  They can be whimsical, magical, surreal, colorful, cinematic, and photo-realistic. Avoid dark or gritty toneed scenes. Keep it funny. Embrace creativity with literary, pop-culture, musical, or cinematic elements. He loves taking selfies!
+  
+  RULE:
+  
+  Generate the impage prompt (setting, activity, clothing, tone, mood, etc.) based of the following concept/idea:
+  ` }
   ];
 }
 

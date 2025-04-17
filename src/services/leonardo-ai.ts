@@ -39,62 +39,74 @@ interface LeonardoAIGenerationResponse {
         url: string;
       }[];
     }
-
-
 }
 
-async function getGenerationDetails(generationId: string, logApiCall: any): Promise<string[]> {
+const MAX_RETRIES = 3;
+
+async function getGenerationDetails(generationId: string, logApiCall: any, retryCount: number = 0): Promise<string[]> {
   const url = `${LEONARDO_API_URL}/${generationId}`;
 
-  logApiCall("Calling Leonardo AI API - Get Generation Details", url, null, null, 200);
+  logApiCall(`Calling Leonardo AI API - Get Generation Details (Attempt ${retryCount + 1})`, url, null, null, 200);
 
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${LEONARDO_API_KEY}`
-    },
-  });
-
-  const responseBody = await response.text();
-
-  logApiCall("Leonardo AI API Response - Get Generation Details", url, null, responseBody, response.status);
-
-  if (!response.ok) {
-    console.error("Leonardo AI API Error (Get Details):", response.status, response.statusText, responseBody);
-    throw new Error(`Leonardo AI API failed with status ${response.status}: ${response.statusText}`);
-  }
-
-  let data: LeonardoAIGenerationResponse;
   try {
-      data = JSON.parse(responseBody) as LeonardoAIGenerationResponse;
-  } catch (e) {
-      console.error("Failed to parse generation details:", e, responseBody);
-      throw new Error("Failed to parse generation details from Leonardo AI API");
-  }
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${LEONARDO_API_KEY}`
+      },
+    });
 
-  const startTime = Date.now();
-  const timeout = 15000; // 15 seconds
+    const responseBody = await response.text();
 
-  while (data?.generations_by_pk?.status !== "COMPLETE") {
-    if (Date.now() - startTime > timeout) {
-      throw new Error("Timeout waiting for image generation to complete.");
+    logApiCall(`Leonardo AI API Response - Get Generation Details (Attempt ${retryCount + 1})`, url, null, responseBody, response.status);
+
+    if (!response.ok) {
+      console.error("Leonardo AI API Error (Get Details):", response.status, response.statusText, responseBody);
+      // Implement exponential backoff
+      if (response.status === 429 && retryCount < MAX_RETRIES) {
+        const delay = Math.pow(2, retryCount) * 1000; // Exponential delay: 2^retry * 1 second
+        console.log(`Retrying after ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return getGenerationDetails(generationId, logApiCall, retryCount + 1); // Recursive call
+      }
+      throw new Error(`Leonardo AI API failed with status ${response.status}: ${response.statusText}`);
     }
 
-    // Wait for 1 second before polling again
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    let data: LeonardoAIGenerationResponse;
+    try {
+        data = JSON.parse(responseBody) as LeonardoAIGenerationResponse;
+    } catch (e) {
+        console.error("Failed to parse generation details:", e, responseBody);
+        throw new Error("Failed to parse generation details from Leonardo AI API");
+    }
 
-    const response = await fetch(url, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${LEONARDO_API_KEY}`
-        },
-      });
-      data = JSON.parse(await response.text()) as LeonardoAIGenerationResponse;
+    const startTime = Date.now();
+    const timeout = 15000; // 15 seconds
+
+    while (data?.generations_by_pk?.status !== "COMPLETE") {
+      if (Date.now() - startTime > timeout) {
+        throw new Error("Timeout waiting for image generation to complete.");
+      }
+
+      // Wait for 1 second before polling again
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const response = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${LEONARDO_API_KEY}`
+          },
+        });
+        data = JSON.parse(await response.text()) as LeonardoAIGenerationResponse;
+    }
+
+    return data?.generations_by_pk?.generated_images?.map(image => image.url) || [];
+  } catch (error: any) {
+    console.error("Error in getGenerationDetails:", error);
+    throw error;
   }
-
-  return data?.generations_by_pk?.generated_images?.map(image => image.url) || [];
 }
 
 const LEONARDO_API_KEY = "ee5541c6-fd97-4423-b92a-3beae4d9c6ea";
@@ -108,7 +120,7 @@ const LEONARDO_API_URL = "https://cloud.leonardo.ai/api/rest/v1/generations";
  * @param params The parameters for image generation.
  * @returns A promise that resolves to a GeneratedImage object containing the URL of the generated image.
  */
-export async function generateImage(params: ImageGenerationParams, logApiCall: any): Promise<GeneratedImage | null> {
+export async function generateImage(params: ImageGenerationParams, logApiCall: any, retryCount: number = 0): Promise<GeneratedImage | null> {
   try {
     const payload = {
       "height": params.height,
@@ -119,7 +131,7 @@ export async function generateImage(params: ImageGenerationParams, logApiCall: a
       "width": params.width,
       "contrast": 4,
       "guidance_scale": 7,
-      "negative_prompt": "skinny, gym built, athlete, fat, obese, white facial hair, old man, real bear, nsfw, nudity, suggestive",
+      "negative_prompt": "skinny, gym built, athlete, fat, obese, white facial hair, old man, real bear, nsfw, nudity, suggestive, inappropriate",
       "num_inference_steps": 20,
       "public": false,
       "scheduler": "LEONARDO",
@@ -131,7 +143,7 @@ export async function generateImage(params: ImageGenerationParams, logApiCall: a
       ]
     };
 
-    logApiCall("Calling Leonardo AI API",
+    logApiCall(`Calling Leonardo AI API (Attempt ${retryCount + 1})`,
         LEONARDO_API_URL,
         payload,
         null,
@@ -149,9 +161,16 @@ export async function generateImage(params: ImageGenerationParams, logApiCall: a
 
     const responseBody = await response.text();
 
-    logApiCall("Leonardo AI API Response", LEONARDO_API_URL, payload, responseBody, response.status);
+    logApiCall(`Leonardo AI API Response (Attempt ${retryCount + 1})`, LEONARDO_API_URL, payload, responseBody, response.status);
 
     if (!response.ok) {
+       // Implement exponential backoff
+       if (response.status === 429 && retryCount < MAX_RETRIES) {
+        const delay = Math.pow(2, retryCount) * 1000; // Exponential delay: 2^retry * 1 second
+        console.log(`Retrying after ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        return generateImage(params, logApiCall, retryCount + 1); // Recursive call
+      }
       throw new Error(`Leonardo AI API failed: ${response.status} - ${responseBody}`);
     }
 
