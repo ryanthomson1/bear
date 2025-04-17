@@ -65,7 +65,7 @@ RULES
 - No corporate tone
 - No summaries or intros
 - No “engagement bait” or preachiness
-- No formatting like a thread — each is a standalone post
+- No formatting like a thread – each is a standalone post
 - Don’t explain the joke
 - Don’t talk like an AI
 - Do not be safe
@@ -113,7 +113,7 @@ CONTENT BREAKDOWN & POST TYPES (IF NO IDEA IS PROVIDED):
    - “The Oscars are just Coachella for people who think trauma counts as craft.”
 
 3. Existential Dread & Overthinking (10%)
-   Embrace aging, mortality, loneliness, and being chronically online — with sharp, bitter humor.
+   Embrace aging, mortality, loneliness, and being chronically online – with sharp, bitter humor.
    Example:
    - “I told my therapist I’m scared of dying alone. She said, ‘at least it’s quiet.’”
 
@@ -244,8 +244,14 @@ export function PostGenerator() {
       if (generateImages) {
         const imageResults = await Promise.all(
           generatedPosts.posts.map(async (post) => {
+            if (!selectedImageInstruction?.content) {
+              console.warn("No image instructions selected, skipping image generation.");
+              return { imageUrl: null, imagePrompt: null }; // Return null values if no image instructions
+            }
+
             // Combine image instructions and the generated thread post
-            const combinedPrompt = `${selectedImageInstruction?.content || ""} ${post.content}`;
+            const combinedPrompt = `${selectedImageInstruction.content} Inspired by: ${post.content}`;
+
 
             const generateImagePromptsInput = {
               threadPost: combinedPrompt,
