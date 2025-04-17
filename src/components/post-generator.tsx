@@ -80,7 +80,7 @@ Each one should:
 - Relate directly and creatively to the provided \`Text Post Idea\` (if one exists)
 - If no idea is given, follow the breakdown below
 - Be punchy, funny, biting, weird, or sad in a way that feels intentional
-- Read like it was posted by a human who’s smart, pissed, exhausted, and a little too online
+- Read like a human who’s smart, pissed, exhausted, and a little too online
 
 —
 
@@ -243,64 +243,69 @@ export function PostGenerator() {
 
       if (generateImages) {
         const imageResults = await Promise.all(
-          generatedPosts.posts.map(async (post) => {
-            if (!selectedImageInstruction?.content) {
-              console.warn("No image instructions selected, skipping image generation.");
-              return { imageUrl: null, imagePrompt: null }; // Return null values if no image instructions
+          generatedPosts.posts.map(async (post, index) => {
+            try {
+              if (!selectedImageInstruction?.content) {
+                console.warn("No image instructions selected, skipping image generation.");
+                return { imageUrl: null, imagePrompt: null }; // Return null values if no image instructions
+              }
+
+              // Combine image instructions and the generated thread post
+              const combinedPrompt = `${selectedImageInstruction.content} Inspired by: ${post.content}`;
+
+
+              const generateImagePromptsInput = {
+                threadPost: combinedPrompt,
+              };
+
+              logApiCall("Generating image prompts",
+                "/ai/flows/generate-image-prompts",
+                generateImagePromptsInput,
+                null,
+                200
+              );
+
+              const imagePromptResult = await generateImagePrompts(generateImagePromptsInput);
+
+              logApiCall("Generated image prompts",
+                "/ai/flows/generate-image-prompts",
+                generateImagePromptsInput,
+                imagePromptResult,
+                200
+              );
+
+              const imageParams: ImageGenerationParams = {
+                prompt: imagePromptResult.imagePrompt,
+                width: 512,
+                height: 512,
+              };
+
+              logApiCall("Generating image",
+                "/services/leonardo-ai",
+                imageParams,
+                null,
+                200
+              );
+
+              const generatedImage = await generateImage(imageParams, logApiCall);
+
+              logApiCall("Generated image",
+                "/services/leonardo-ai",
+                imageParams,
+                generatedImage,
+                200
+              );
+
+              return { imageUrl: generatedImage?.imageUrl || null, imagePrompt: imageParams.prompt };
+            } catch (error: any) {
+              console.warn(`Failed to generate image for post ${index + 1}:`, error.message);
+              return { imageUrl: null, imagePrompt: null }; // Return null values if image generation fails
             }
-
-            // Combine image instructions and the generated thread post
-            const combinedPrompt = `${selectedImageInstruction.content} Inspired by: ${post.content}`;
-
-
-            const generateImagePromptsInput = {
-              threadPost: combinedPrompt,
-            };
-
-            logApiCall("Generating image prompts",
-              "/ai/flows/generate-image-prompts",
-              generateImagePromptsInput,
-              null,
-              200
-            );
-
-            const imagePromptResult = await generateImagePrompts(generateImagePromptsInput);
-
-            logApiCall("Generated image prompts",
-              "/ai/flows/generate-image-prompts",
-              generateImagePromptsInput,
-              imagePromptResult,
-              200
-            );
-
-            const imageParams: ImageGenerationParams = {
-              prompt: imagePromptResult.imagePrompt,
-              width: 512,
-              height: 512,
-            };
-
-            logApiCall("Generating image",
-              "/services/leonardo-ai",
-              imageParams,
-              null,
-              200
-            );
-
-            const generatedImage = await generateImage(imageParams, logApiCall);
-
-             logApiCall("Generated image",
-              "/services/leonardo-ai",
-              imageParams,
-              generatedImage,
-              200
-            );
-
-            return { imageUrl: generatedImage.imageUrl, imagePrompt: imageParams.prompt };
           })
         );
 
-        setImageUrls(imageResults.map(result => result.imageUrl));
-        setImagePrompts(imageResults.map(result => result.imagePrompt));
+        setImageUrls(imageResults.map(result => result?.imageUrl || null));
+        setImagePrompts(imageResults.map(result => result?.imagePrompt || null));
       }
     } catch (error: any) {
       console.error("Error generating posts:", error);
@@ -406,7 +411,7 @@ export function PostGenerator() {
                 {generateImages && imageUrls[index] && (
                   <>
                     <img
-                      src={imageUrls[index]}
+                      src={imageUrls[index] || "https://picsum.photos/512/512"}
                       alt={`Generated Image ${index + 1}`}
                       className="mt-2 rounded-md"
                     />
@@ -441,3 +446,4 @@ export function PostGenerator() {
     </div>
   );
 }
+
