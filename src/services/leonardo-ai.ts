@@ -130,17 +130,11 @@ export async function generateImage(params: ImageGenerationParams, logApiCall: a
       "prompt": params.prompt.substring(0, Math.min(1000, params.prompt.length)), // Truncate prompt to 1000 characters
       "width": params.width,
       "contrast": 4,
-      "guidance_scale": 7,
+      "guidance_scale": 8,
       "negative_prompt": "skinny, gym built, athlete, fat, obese, white facial hair, old man, real bear, nsfw, nudity, suggestive, inappropriate",
       "num_inference_steps": 20,
       "public": false,
       "scheduler": "LEONARDO",
-      "userElements": [
-        {
-          "weight": 0.4,
-          "userLoraId": 54879
-        }
-      ]
     };
 
     logApiCall(`Calling Leonardo AI API (Attempt ${retryCount + 1})`,

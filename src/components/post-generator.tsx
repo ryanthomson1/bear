@@ -139,12 +139,12 @@ INSTRUCTIONS
 
 #### Key Parameters:
 1. **Age & Build**:
-   - "40-year-old man, good-looking slighly chubby dad type."
-   - "Stocky build, a little chubby around the midsection, slightly overweight, not obese, dad-bod, ex-football player"
+   - "40-year-old man masculine gay man good-looking slighly chubby."
+   - "Stocky build, not obese, dad-bod, ex-football player"
 
 2. **Facial Hair**:
-   - "Thick, well-groomed beard or mustache, medium-length, textured, dark brown or salt-and-pepper coloring"
-   - Variations: "scruffy stubble" or "full bushy beard" or "handlebar moustache" for diversity
+   - "Well-groomed beard or mustache, textured, brown coloring"
+   - Variations: "salt and peper" "scruffy stubble" or "full bushy beard" or "handlebar moustache" for diversity
 
 3. **Ethnic Ambiguity**:
    - "Medium skin tone, blended ethnic features (hints of Mediterranean, Middle Eastern, or Latin heritage - mixed), dark eyes.
@@ -159,15 +159,11 @@ INSTRUCTIONS
    - Alternative: "Face partially shadowed, dramatic lighting casting soft shadows over the upper face, maintaining visibility but adding mystery"
    - Ensure: "Full facial features (beard, mouth, jaw) remain clear: only eye recognition is reduced"
 
-6. **Expression & Importance**:
-   - "Confident expression, slight smirk or stern look behind sunglasses/shadows"
-   - "Aura of authority, gravitas, or enigmatic strength"
-
-7. **Clothing & Context**:
+6. **Clothing & Context**:
    - "Relaxed and casual—flannel shirts, jeans, shorts, leather jacket, or henley, slightly rugged, bear costume headpiece integrated naturally"
    - Optional variations: "Loose muscle shirt (open-collared shirt, blazer)" or "Relaxed outdoor gear (parka, scarf)" to suggest importance in different settings also "reveling revealing clothing (shirtless, muscle shirts, shorts, leather vests, tight jeans, chest harness etc.) to show some skin and sexiness.
 
-8. **Art Style & Technical Details**:
+7. **Art Style & Technical Details**:
    - "Hyper photo-realistic rendering, photograph, natural lighting, shallow depth of field, medium shot, cinematic composition, vivid colors."
 
 #### Usage Instructions:
@@ -181,7 +177,7 @@ INSTRUCTIONS
   
   RULE:
   
-  Generate the impage prompt (setting, activity, clothing, tone, mood, etc.) based of the following concept/idea:
+  Generate the image prompt (setting, activity, clothing, tone, mood, etc.) based of the following concept/idea:
   ` }
   ];
 }

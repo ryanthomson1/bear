@@ -385,7 +385,7 @@ INSTRUCTIONS
               <SelectValue placeholder="Select Account" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="bearwithabite">bearwithabite</SelectItem>
+              <SelectItem value="thebearwithabite">thebearwithabite</SelectItem>
               <SelectItem value="anotheraccount">anotheraccount</SelectItem>
             </SelectContent>
           </Select>

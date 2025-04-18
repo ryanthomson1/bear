@@ -13,7 +13,8 @@ export interface ThreadPost {
 }
 
 const THREADS_ACCESS_TOKEN = "THAARZAqKoPZCthBYldocm1lMFl0UktkWFM3amZAiNlVKMDlWN0xKRVNDWlNPTTJSR1VPSDJtd2sxaldwa29LWVluWVJzdjB1Sks1OEh0RFNTc3U2aUlQa1FrQW1tOXE4MkE4Q3A0N3JnTDdnakhhanF0UXJ0MGxtbnc2Qy01blNRZAW1QdUE4N1lCUy1DWlFxbW8ZD";
-const THREADS_API_BASE_URL = "https://api.threads.com/v1"; // Replace with the actual base URL
+//const THREADS_API_BASE_URL = "https://api.threads.com/v1"; // Replace with the actual base URL
+const THREADS_API_BASE_URL = "https://www.threads.net/api/v1";
 
 /**
  * Asynchronously posts a thread to the Threads API.
