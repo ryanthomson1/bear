@@ -343,12 +343,12 @@ export async function searchThreads(
     });
 
     if (!response.ok) {
-      let errorBody;
+      let errorBody: any;
       try {
         errorBody = await response.json();
-        console.log(errorBody);
       } catch (e) {
         console.error("Failed to parse error response:", e);
+        errorBody = {}; // Assign an empty object in case parsing fails
       }
       console.error('Error searching Threads:', response.status, errorBody);
       throw new Error(`Failed to search Threads: ${response.status} - ${errorBody.message || 'Unknown error'}`);
