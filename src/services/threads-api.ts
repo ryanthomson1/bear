@@ -23,7 +23,7 @@ export async function searchThreads(
   fields: string = "id,text,media_type,permalink,timestamp,username,has_replies,is_quote_post,is_reply"
 ): Promise<ThreadsKeywordSearchResult[]> {
   try {
-    if (!THREADS_ACCESS_TOKEN) {
+    if (!process.env.THREADS_ACCESS_TOKEN) {
       throw new Error("THREADS_ACCESS_TOKEN is not defined.");
     }
 
@@ -31,13 +31,13 @@ export async function searchThreads(
       q: q,
       search_type: search_type || 'TOP', // Default to 'TOP' if not provided
       fields: fields,
-      access_token: THREADS_ACCESS_TOKEN,
+      access_token: process.env.THREADS_ACCESS_TOKEN,
     }).toString();
 
     const response = await fetch(`${THREADS_API_BASE_URL}/keyword_search?${queryParams}`, {
       method: 'GET', // Changed to GET
       headers: {
-        'Authorization': `Bearer ${THREADS_ACCESS_TOKEN}`,
+        'Authorization': `Bearer ${process.env.THREADS_ACCESS_TOKEN}`,
       }
     });
 
@@ -80,3 +80,4 @@ export async function searchThreads(
 // if (require.main === module) {
 //   main();
 // }
+
