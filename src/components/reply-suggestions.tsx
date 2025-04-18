@@ -6,15 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  getThreadsPosts,
-  ThreadPost,
   searchThreads,
   ThreadsKeywordSearchResult,
 } from "@/services/threads-api";
 import { suggestThreadReplies } from "@/ai/flows/suggest-thread-replies";
 
 export function ReplySuggestions() {
-  const [posts, setPosts] = useState<(ThreadPost | ThreadsKeywordSearchResult)[]>([]);
+  const [posts, setPosts] = useState<(ThreadsKeywordSearchResult)[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const postsPerPage = 3; // Display 3 posts per page
@@ -55,43 +53,18 @@ export function ReplySuggestions() {
         setLoading(false);
         setIsSearching(false);
       }
-    } else {
-      setLoading(true);
-      try {
-        const fetchedPosts = await getThreadsPosts();
-        if (fetchedPosts && fetchedPosts.length > 0) {
-          setPosts(fetchedPosts);
-          const suggestedReplies = await Promise.all(
-            fetchedPosts.map(async (post) => {
-              const postContent = "content" in post ? post.content : "text" in post ? post.text : "";
-              if (postContent) {
-                const reply = await suggestThreadReplies({ postContent });
-                return reply.replySuggestion;
-              }
-              return "";
-            })
-          );
-          setReplies(suggestedReplies);
-        }
-      } catch (error) {
-        console.error("Error loading posts:", error);
-        setPosts([]);
-        setReplies([]);
-      } finally {
-        setLoading(false);
-      }
     }
   };
   const handlePostReply = (index: number) => {
     // Implement logic to post the reply to Threads
-    alert(`Posting reply: ${replies[index]} to thread: ${posts[index].content}`);
+    alert(`Posting reply: ${replies[index]} to thread: ${posts[index].text}`);
   };
 
   const handleGenerateNewReply = async (index: number) => {
     setLoading(true);
     try {
       const post = posts[index];
-      const postContent = "text" in post ? post.text : post.content;
+      const postContent = "text" in post ? post.text : "text" in post ? post.text : "";
       const reply = await suggestThreadReplies({
         // Use post.text for both search results and regular posts.
         postContent,
@@ -174,13 +147,6 @@ export function ReplySuggestions() {
                   </CardHeader>
                   <CardContent>
                     <p>{post.text}</p>
-                    {(post as ThreadPost).imageUrl && (
-                      <img
-                        src={(post as ThreadPost).imageUrl}
-                        alt="Thread Post Image"
-                        className="mt-2 rounded-md"
-                      />
-                    )}
                     <Textarea
                       value={replies[postIndex] || ""}
                       onChange={(e) => handleEditReply(postIndex, e.target.value)}
@@ -218,3 +184,4 @@ export function ReplySuggestions() {
     </div>
   );
 }
+
