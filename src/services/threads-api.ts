@@ -38,28 +38,25 @@ export async function searchThreads(
 
     const response = await fetch(`${THREADS_API_BASE_URL}/keyword_search?${queryParams}`, {
       method: 'GET', // Changed to GET
-      headers: {
-        'Authorization': `Bearer ${THREADS_ACCESS_TOKEN}`,
-      }
     });
 
-    if (!response.ok) {
-      let errorBody: any;
-      try {
-        const errorText = await response.text();
+   if (!response.ok) {
+        let errorBody: any;
         try {
-          errorBody = JSON.parse(errorText);
-        } catch (jsonError) {
-          console.error("Failed to parse JSON error response:", jsonError, errorText);
-          errorBody = { message: errorText };
+          const errorText = await response.text();
+          try {
+            errorBody = JSON.parse(errorText);
+          } catch (jsonError) {
+            console.error("Failed to parse JSON error response:", jsonError, errorText);
+            errorBody = { message: errorText };
+          }
+        } catch (e) {
+          console.error("Failed to read or parse error response:", e);
+          errorBody = {}; // Assign an empty object in case parsing fails
         }
-      } catch (e) {
-        console.error("Failed to read or parse error response:", e);
-        errorBody = {}; // Assign an empty object in case parsing fails
+        console.error('Error searching Threads:', response.status, errorBody);
+        throw new Error(`Failed to search Threads: ${response.status} - ${errorBody.message || 'Unknown error'}`);
       }
-      console.error('Error searching Threads:', response.status, errorBody);
-      throw new Error(`Failed to search Threads: ${response.status} - ${errorBody.message || 'Unknown error'}`);
-    }
 
     const result = await response.json();
     return result.data || [];
