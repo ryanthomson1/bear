@@ -91,6 +91,9 @@ export async function getThreadsPosts(): Promise<ThreadPost[]> {
 
     const response = await fetch(`${THREADS_API_BASE_URL}/me/threads?${queryParams}`, {
       method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${THREADS_ACCESS_TOKEN}`,
+      }
     });
 
     // Example Response
@@ -153,6 +156,9 @@ export async function getThreadsProfile(): Promise<ThreadsProfile> {
 
     const response = await fetch(`${THREADS_API_BASE_URL}/me?${queryParams}`, {
       method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${THREADS_ACCESS_TOKEN}`,
+      }
     });
 
     // Example Response
@@ -189,6 +195,9 @@ export async function getThreadsRateLimits(): Promise<ThreadsRateLimits> {
 
     const response = await fetch(`${THREADS_API_BASE_URL}/me/threads_publishing_limit?${queryParams}`, {
       method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${THREADS_ACCESS_TOKEN}`,
+      }
     });
 
     //Example Response
@@ -319,15 +328,18 @@ export async function searchThreads(
   fields: string = "id,text,media_type,permalink,timestamp,username,has_replies,is_quote_post,is_reply"
 ): Promise<ThreadsKeywordSearchResult[]> {
   try {
-    const requestBody = new URLSearchParams();
-    requestBody.append('q', q);
-    requestBody.append('search_type', search_type || 'TOP'); // Default to 'TOP' if not provided
-    requestBody.append('fields', fields);
-    requestBody.append('access_token', THREADS_ACCESS_TOKEN);
+    const queryParams = new URLSearchParams({
+      q: q,
+      search_type: search_type || 'TOP', // Default to 'TOP' if not provided
+      fields: fields,
+      access_token: THREADS_ACCESS_TOKEN,
+    }).toString();
 
-    const response = await fetch(`${THREADS_API_BASE_URL}/keyword_search`, {
+    const response = await fetch(`${THREADS_API_BASE_URL}/keyword_search?${queryParams}`, {
       method: 'GET', // Changed to GET
-      body: requestBody,
+      headers: {
+        'Authorization': `Bearer ${THREADS_ACCESS_TOKEN}`,
+      }
     });
 
     if (!response.ok) {
