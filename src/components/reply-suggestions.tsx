@@ -5,12 +5,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getThreadsPosts, ThreadPost } from "@/services/threads-api";
+import {
+  getThreadsPosts,
+  ThreadPost,
+  searchThreads,
+  ThreadsKeywordSearchResult,
+} from "@/services/threads-api";
 import { suggestThreadReplies } from "@/ai/flows/suggest-thread-replies";
 
 export function ReplySuggestions() {
-  const [posts, setPosts] = useState<ThreadPost[]>([]);
-  const [replies, setReplies] = useState<string[]>([]);
+  const [posts, setPosts] = useState<(ThreadPost | ThreadsKeywordSearchResult)[]>([]);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const postsPerPage = 3; // Display 3 posts per page
@@ -18,30 +22,66 @@ export function ReplySuggestions() {
     user: "",
     topic: "",
   });
+  const [replies, setReplies] = useState<string[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     loadPosts();
   }, [currentPage, filters]);
 
   const loadPosts = async () => {
-    setLoading(true);
-    try {
-      const fetchedPosts = await getThreadsPosts(filters, postsPerPage, "");
-      setPosts(fetchedPosts);
-      const suggestedReplies = await Promise.all(
-        fetchedPosts.map(async (post) => {
-          const reply = await suggestThreadReplies({ postContent: post.content });
-          return reply.replySuggestion;
-        })
-      );
-      setReplies(suggestedReplies);
-    } catch (error) {
-      console.error("Error loading posts:", error);
-    } finally {
-      setLoading(false);
+    if (filters.topic) {
+      setIsSearching(true);
+      setLoading(true);
+      try {
+        const results = await searchThreads({
+          q: filters.topic,
+          search_type: "TOP",
+          fields:
+            "id,text,media_type,permalink,timestamp,username,has_replies,is_quote_post,is_reply",
+        });
+        if (results && results.length > 0) {
+          setPosts(results);
+          setReplies(results.map(() => ""));
+        } else {
+          setPosts([]);
+          setReplies([]);
+        }
+      } catch (error) {
+        console.error("Error searching threads:", error);
+        setPosts([]);
+        setReplies([]);
+      } finally {
+        setLoading(false);
+        setIsSearching(false);
+      }
+    } else {
+      setLoading(true);
+      try {
+        const fetchedPosts = await getThreadsPosts();
+        if (fetchedPosts && fetchedPosts.length > 0) {
+          setPosts(fetchedPosts);
+          const suggestedReplies = await Promise.all(
+            fetchedPosts.map(async (post) => {
+              const postContent = "content" in post ? post.content : "text" in post ? post.text : "";
+              if (postContent) {
+                const reply = await suggestThreadReplies({ postContent });
+                return reply.replySuggestion;
+              }
+              return "";
+            })
+          );
+          setReplies(suggestedReplies);
+        }
+      } catch (error) {
+        console.error("Error loading posts:", error);
+        setPosts([]);
+        setReplies([]);
+      } finally {
+        setLoading(false);
+      }
     }
   };
-
   const handlePostReply = (index: number) => {
     // Implement logic to post the reply to Threads
     alert(`Posting reply: ${replies[index]} to thread: ${posts[index].content}`);
@@ -50,7 +90,12 @@ export function ReplySuggestions() {
   const handleGenerateNewReply = async (index: number) => {
     setLoading(true);
     try {
-      const reply = await suggestThreadReplies({ postContent: posts[index].content });
+      const post = posts[index];
+      const postContent = "text" in post ? post.text : post.content;
+      const reply = await suggestThreadReplies({
+        // Use post.text for both search results and regular posts.
+        postContent,
+      });
       const newReplies = [...replies];
       newReplies[index] = reply.replySuggestion;
       setReplies(newReplies);
@@ -111,73 +156,64 @@ export function ReplySuggestions() {
         </div>
       </div>
 
-      {loading ? (
-        <div>Loading posts...</div>
-      ) : (
-        <>
-          {posts.slice(
-            (currentPage - 1) * postsPerPage,
-            currentPage * postsPerPage
-          ).map((post, index) => {
-            const postIndex = (currentPage - 1) * postsPerPage + index;
-            return (
-              <Card key={postIndex} className="mb-4">
-                <CardHeader>
-                  <CardTitle>Thread Post</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p>{post.content}</p>
-                  {post.imageUrl && (
-                    <img
-                      src={post.imageUrl}
-                      alt="Thread Post Image"
-                      className="mt-2 rounded-md"
+      {isSearching && loading && <div>Searching posts...</div>}
+      {!isSearching && loading && <div>Loading posts...</div>}
+      {!loading && posts.length === 0 && (
+        <div>No posts found. Please try different filters or keywords.</div>
+      )}
+      {!loading && posts.length > 0 && (
+        <div>
+          {posts
+            .slice((currentPage - 1) * postsPerPage, currentPage * postsPerPage)
+            .map((post, index) => {
+              const postIndex = (currentPage - 1) * postsPerPage + index;
+              return (
+                <Card key={postIndex} className="mb-4">
+                  <CardHeader>
+                    <CardTitle>Thread Post</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p>{post.text}</p>
+                    {(post as ThreadPost).imageUrl && (
+                      <img
+                        src={(post as ThreadPost).imageUrl}
+                        alt="Thread Post Image"
+                        className="mt-2 rounded-md"
+                      />
+                    )}
+                    <Textarea
+                      value={replies[postIndex] || ""}
+                      onChange={(e) => handleEditReply(postIndex, e.target.value)}
+                      className="mt-2"
                     />
-                  )}
-                  <Textarea
-                    value={replies[postIndex] || ""}
-                    onChange={(e) =>
-                      handleEditReply(postIndex, e.target.value)
-                    }
-                    className="mt-2"
-                  />
-                  <div className="flex justify-end space-x-2 mt-2">
-                    <Button
-                      variant="secondary"
-                      onClick={() => handleGenerateNewReply(postIndex)}
-                      disabled={loading}
-                    >
-                      {loading ? "Generating..." : "Generate New Reply"}
-                    </Button>
-                    <Button onClick={() => handlePostReply(postIndex)}>
-                      Post Reply
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-
-          <div className="flex justify-between items-center">
-            <Button
-              onClick={goToPreviousPage}
-              disabled={currentPage === 1}
-              variant="outline"
-            >
-              Previous Page
-            </Button>
-            <span>
-              Page {currentPage} of {totalPages}
-            </span>
-            <Button
-              onClick={goToNextPage}
-              disabled={currentPage === totalPages}
-              variant="outline"
-            >
-              Next Page
-            </Button>
-          </div>
-        </>
+                    <div className="flex justify-end space-x-2 mt-2">
+                      <Button
+                        variant="secondary"
+                        onClick={() => handleGenerateNewReply(postIndex)}
+                        disabled={loading}
+                      >
+                        {loading ? "Generating..." : "Generate New Reply"}
+                      </Button>
+                      <Button onClick={() => handlePostReply(postIndex)}>Post Reply</Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          {posts.length > postsPerPage && (
+            <div className="flex justify-between items-center">
+              <Button onClick={goToPreviousPage} disabled={currentPage === 1} variant="outline">
+                Previous Page
+              </Button>
+              <span>
+                Page {currentPage} of {totalPages}
+              </span>
+              <Button onClick={goToNextPage} disabled={currentPage === totalPages} variant="outline">
+                Next Page
+              </Button>
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
