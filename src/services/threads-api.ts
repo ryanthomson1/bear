@@ -3,7 +3,6 @@
 export type ThreadKeywordSearchType = 'TOP' | 'RECENT' | undefined;
 
 const THREADS_API_BASE_URL = 'https://www.threads.net/api/v1';
-const THREADS_ACCESS_TOKEN = process.env.THREADS_ACCESS_TOKEN;
 
 export interface ThreadsKeywordSearchResult {
   id: string;
@@ -66,18 +65,3 @@ export async function searchThreads(
     throw new Error(`Failed to search Threads: ${error.message}`);
   }
 }
-
-// Example usage (not part of the final API, but can be used to test)
-// async function main() {
-//   try {
-//     const results = await searchThreads("example", "TOP", "id,text");
-//     console.log("Search Results:", JSON.stringify(results, null, 2));
-//   } catch (error: any) {
-//     console.error("Error:", error.message);
-//   }
-// }
-
-// if (require.main === module) {
-//   main();
-// }
-
