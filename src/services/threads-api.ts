@@ -1,4 +1,21 @@
+'use server';
+
 export type ThreadKeywordSearchType = 'TOP' | 'RECENT' | undefined;
+
+const THREADS_API_BASE_URL = 'https://www.threads.net/api/v1';
+const THREADS_ACCESS_TOKEN = process.env.THREADS_ACCESS_TOKEN;
+
+export interface ThreadsKeywordSearchResult {
+  id: string;
+  text: string;
+  media_type: string;
+  permalink: string;
+  timestamp: number;
+  username: string;
+  has_replies: boolean;
+  is_quote_post: boolean;
+  is_reply: boolean;
+}
 
 export async function searchThreads(
   q: string,
@@ -6,6 +23,10 @@ export async function searchThreads(
   fields: string = "id,text,media_type,permalink,timestamp,username,has_replies,is_quote_post,is_reply"
 ): Promise<ThreadsKeywordSearchResult[]> {
   try {
+    if (!THREADS_ACCESS_TOKEN) {
+      throw new Error("THREADS_ACCESS_TOKEN is not defined.");
+    }
+
     const queryParams = new URLSearchParams({
       q: q,
       search_type: search_type || 'TOP', // Default to 'TOP' if not provided
@@ -23,14 +44,15 @@ export async function searchThreads(
     if (!response.ok) {
       let errorBody: any;
       try {
-        errorBody = await response.text();
+        const errorText = await response.text();
         try {
-          errorBody = JSON.parse(errorBody);
+          errorBody = JSON.parse(errorText);
         } catch (jsonError) {
-          console.error("Failed to parse JSON error response:", jsonError);
+          console.error("Failed to parse JSON error response:", jsonError, errorText);
+          errorBody = { message: errorText };
         }
       } catch (e) {
-        console.error("Failed to parse error response:", e);
+        console.error("Failed to read or parse error response:", e);
         errorBody = {}; // Assign an empty object in case parsing fails
       }
       console.error('Error searching Threads:', response.status, errorBody);
@@ -45,3 +67,16 @@ export async function searchThreads(
   }
 }
 
+// Example usage (not part of the final API, but can be used to test)
+// async function main() {
+//   try {
+//     const results = await searchThreads("example", "TOP", "id,text");
+//     console.log("Search Results:", JSON.stringify(results, null, 2));
+//   } catch (error: any) {
+//     console.error("Error:", error.message);
+//   }
+// }
+
+// if (require.main === module) {
+//   main();
+// }
