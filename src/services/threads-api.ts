@@ -25,6 +25,7 @@ export async function searchThreads(
     const THREADS_ACCESS_TOKEN = process.env.THREADS_ACCESS_TOKEN;
 
     if (!THREADS_ACCESS_TOKEN) {
+      console.error("THREADS_ACCESS_TOKEN is not defined. Please set it in your environment variables.");
       throw new Error("THREADS_ACCESS_TOKEN is not defined.");
     }
 
